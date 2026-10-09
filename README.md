@@ -1,96 +1,126 @@
-# Primer juego: Wollok Game
- 
-Para conocer Wollok Game vamos a desarrollar un pac-man básico con el que conoceremos los conceptos principales del juego.
+# Pacman!
 
-# Primera iteración
+# Segunda iteración: rivales
 
-## El tablero
+## Algunos ajustes al tablero
 
-Generamos un proyecto Wollok, con un programa. Lo primero que escribimos es
-
-```wollok
-program abc {
-    
-	// que arranque el juego!
-	game.start()
-
-}
-```
-
-Bueno, no es algo muy convincente, pero tenemos un tablero provisto por el wko game, que acabamos de conocer.
-
-## Mejorando el tablero
-
-Para que el tablero se vea un poco más interesante, vamos a 
-
-- agrandar su tamaño, eso nos permitirá que luego nuestro personaje se pueda mover más confortablemente
-- y pondremos una imagen bonita de fondo
-
-Pueden elegir cualquiera de las imágenes que quieran, lo debemos guardar en una carpeta que tiene que ser **assets** (o puede ser alguna diferente si la configurás en [el archivo package.json](./package.json)). 
-
-Ahora sí, podemos actualizar el programa, poniéndole un nombre más representativo que abc:
+Con el gimp o cualquier programa de edición, vamos a ajustar el fondo para que tenga menos contraste y se vea con efecto más apagado, para que los personajes y los elementos se distingan más. Además le vamos a poner un título al juego:
 
 ```js
 program pacmanGame {
 	
-	// límites del juego
-	game.width(14)
-	game.height(8)
+	game.title("Pacman!")
+```
+
+## El rival
+
+Vamos a generar dos rivales inicialmente, que no tienen un comportamiento diferencial, ambos van a ser objetos visuales ubicados en posiciones distintas y con colores diferentes. Entonces una clase rival suena bien, la ubicamos en el archivo `exmample.wlk`:
+
+```wollok
+class Rival {
+	const numero
 	
-	// fondo
-	game.boardGround("pacmanBackground.jpg")
-	
-	// que arranque el juego!
-	game.start()
-	
+	method image() = "rival" + numero.toString() + ".png"
+
+	method position() = game.at(numero + 1, numero + 1)
 }
 ```
 
-## Agregando un personaje principal
+Al instanciar a los rivales se le pasa el número, para determinar
 
-Vamos a crear un pacman, en el archivo example.wlk que nos generó el IDE de Wollok. El pacman será nuestro personaje principal, y al igual que cualquier otro elemento visual del juego, debe tener como atributos:
+- la imagen que va a utilizar: "rival1.png", "rival2.png", etc.
+- y la posición inicial que va a ocupar, (2, 2) para el primer rival, (3, 3) para el segundo rival, etc.
 
-- una imagen asociada (para que el jugador lo identifique en el tablero)
-- y una posición inicial dentro del tablero
 
-Escribimos entonces nuestro pacman:
+## Agregando los rivales al tablero
+
+En el programa pacman incorporamos los dos rivales:
+
+```wollok
+program pacman {
+    ...
+
+	// rivales
+	game.addVisual(new Rival(numero = 1))
+	game.addVisual(new Rival(numero = 2))
+
+}
+```
+
+## Estrategia de colisión contra los rivales
+
+Si ejecutamos el programa, no tiene mucha gracia: el personaje pasa por encima de sus rivales y éstos, como si nada. Vamos a jugar un poco con estrategia de colisión, cada vez que el personaje choque con un rival
+
+- pierde una vida
+- y vuelve a la posición original
+
+Para eso, necesitamos tener una referencia a los rivales. Cambiaremos entonces la forma de instanciarlos en el programa:
+
+```wollok
+  // rivales
+  const rivales = [new Rival(numero = 1), new Rival(numero = 2)]
+	
+	rivales.forEach { rival => 
+		game.addVisual(rival)
+		game.whenCollideDo(rival, { personaje =>
+			personaje.perderVida()
+		})
+	}
+```
+
+Y ¿qué hace el método perderVida() de pacman? Al rival no le importa, la delegación funciona también en los juegos.
+
+## Perdiendo una vida
+
+Ahora sí implementamos la pérdida de la vida del pacman, para eso
+
+- necesitamos contar cuántas vidas tiene, con una referencia a un número nos alcanza
+- y actualizar la posición donde se encuentra
 
 ```wollok
 object pacman {
-	var property image = "pacman.png"
-	var property position = game.origin()
-}
+    ...
+	var vidas = 3
+
+	method perderVida() {
+		vidas = vidas - 1
+		position = game.origin()	
+	}
 ```
 
-La imagen corresponde a un nombre de archivo que debe existir en la carpeta "asset" o como lo quieran llamar, y que debe ser una carpeta fuente. El wko game ofrece un mensaje origin() para ubicarlo en la esquina izquierda inferior del tablero.
+## Terminando el juego
 
-Solamente necesitamos agregarlo al tablero de la siguiente manera:
+Un agregado más: vamos a parar el juego cuando el pacman pierda tres vidas. Entonces agregamos una pregunta, pero sin saber que el pacman tiene vidas. También para mejorar la UX (Experiencia de Usuario) vamos a pedirle al Pacman que avise cuando pierde una vida y cuando el programa termina. En el programa:
 
 ```wollok
-program pacmanGame {
-	
-    ...
-	
-	// personaje principal
-	game.addVisualCharacter(pacman)
-	
-	// que arranque el juego!
-	game.start()
-	
-}
+	rivales.forEach { rival => 
+		game.addVisual(rival)
+		game.whenCollideDo(rival, { personaje =>
+			personaje.perderVida()
+			if (personaje.juegoTerminado()) {
+				game.stop()
+			}
+		})
+	}
 ```
 
-Y listo! Tenemos una primera versión de nuestro juego:
+Solo nos falta definir el método juegoTerminado() en pacman:
 
-![demo](./videos/demoFirstGame.gif)
+```wollok
+method juegoTerminado() = vidas == 0
+```
+
+# Demo de cómo quedaría el juego hasta ahora
+
+![video](videos/demo2.gif)
 
 # Cómo seguir con el tutorial
 
 Desde una línea de comando, escribí 
 
 ```bash
-$ git checkout 02-rivales
+$ git checkout 03-movimiento
 $ git pull
 ```
 
-
+y leé el archivo README de ese branch. 
