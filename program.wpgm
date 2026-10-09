@@ -14,20 +14,17 @@ program pacmanGame {
 	
 	// personaje principal
 	game.addVisualCharacter(pacman)
-	
 
 	// rivales
-	const rivales = [new Rival(numero = 1), new Rival(numero = 2)]
+	const rivales = [new Rival(numero=1), new Rival(numero=2),new Rival(numero=3),new Rival(numero=4)]
 	
 	rivales.forEach { rival => 
 		game.addVisual(rival)
 		game.whenCollideDo(rival, { personaje =>
-			personaje.perderVida()
-			game.say(pacman, "Ups! Perdí una vida")
-			if (personaje.juegoTerminado()) {
-				game.say(pacman, "Se me terminaron las vidas!!!")
-				game.onTick(5000, "gameEnd", { game.stop() })
-			}
+			personaje.chocarCon(rival) // se maneja un método polimórfico
+		})
+		game.onTick(1.randomUpTo(5) * 500, "movimiento", {
+			rival.acercarseA(pacman)
 		})
 	}
 	
